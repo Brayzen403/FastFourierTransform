@@ -20,7 +20,7 @@ FFT PARALLEL IMPLEMETATION
 #include <mpi.h> //To use MPI
 #include <complex.h> //to use complex numbers
 #include <math.h>	//for cos() and sin()
-#include "timer.h" //to use timer
+#include "Timer.h" //to use timer
 
 #define PI 3.14159265
 #define bigN 16384 //Problem Size
@@ -92,23 +92,16 @@ int main()
 			for(i = 0; i < (bigN/comm_sz)/2; i++) //Sigma loop EVEN and ODD
 			{
 				double factoreven , factorodd = 0.0;
-				int shiftevenonnonzeroP = my_rank * subtable[2*i][0]; //used to shift index numbers for correct results for EVEN.
-				int shiftoddonnonzeroP = my_rank * subtable[2*i + 1][0]; //used to shift index numbers for correct results for ODD.
-				
+				int neven = subtable[2*i][0]; // Index for even element
+				int nodd = subtable[2*i + 1][0]; // Index for odd element
+
 				/* -------- EVEN PART -------- */
 				double realeven = subtable[2*i][1]; //Access table for real number at spot 2i
 				double complex imaginaryeven = subtable[2*i][2]; //Access table for imaginary number at spot 2i
 				double complex componeeven = (realeven + imaginaryeven * I); //Create the first component from table
-				if(my_rank == 0) //if proc 0, dont use shiftevenonnonzeroP
-				{
-					factoreven = ((2*PI)*((2*i)*k))/bigN; //Calculates the even factor for Cos() and Sin()										
-								//   *********Reduces computational time*********
-				}
-				else //use shiftevenonnonzeroP
-				{
-					factoreven = ((2*PI)*((shiftevenonnonzeroP)*k))/bigN; //Calculates the even factor for Cos() and Sin()										
-								//   *********Reduces computational time*********
-				}
+				factoreven = ((2*PI)*(neven*k))/bigN; //Calculates the even factor for Cos() and Sin()										
+							//   *********Reduces computational time*********
+
 				double complex comptwoeven = (cos(factoreven) - (sin(factoreven)*I)); //Create the second component
 				
 				evenpart[i] = (componeeven * comptwoeven); //store in the evenpart array
@@ -117,16 +110,8 @@ int main()
 				double realodd = subtable[2*i + 1][1]; //Access table for real number at spot 2i+1
 				double complex imaginaryodd = subtable[2*i + 1][2]; //Access table for imaginary number at spot 2i+1
 				double complex componeodd = (realodd + imaginaryodd * I); //Create the first component from table
-				if (my_rank == 0)//if proc 0, dont use shiftoddonnonzeroP
-				{
-					factorodd = ((2*PI)*((2*i+1)*k))/bigN;//Calculates the odd factor for Cos() and Sin()										
-								// *********Reduces computational time*********	
-				}
-				else //use shiftoddonnonzeroP
-				{
-					factorodd = ((2*PI)*((shiftoddonnonzeroP)*k))/bigN;//Calculates the odd factor for Cos() and Sin()										
-								// *********Reduces computational time*********
-				}
+				factorodd = ((2*PI)*(nodd*k))/bigN;//Calculates the odd factor for Cos() and Sin()										
+							// *********Reduces computational time*********	
 							
 				double complex comptwoodd = (cos(factorodd) - (sin(factorodd)*I));//Create the second component
 
@@ -157,7 +142,7 @@ int main()
 						fprintf(outfile," \n\n TOTAL PROCESSED SAMPLES : %d\n",bigN);
 					}
 					fprintf(outfile,"================================\n");
-					fprintf(outfile,"XR[%d]: %.4f XI[%d]: %.4f \n",k,storeKsumreal[k],k,storeKsumimag[k]);
+					fprintf(outfile,"XR[%d]: %.4f XI[%d]: %.4f \n", k, storeKsumreal[k], k, storeKsumimag[k]);
 					fprintf(outfile,"================================\n");
 				}
 			}
@@ -173,7 +158,7 @@ int main()
 	if(my_rank == 0)
 	{
 		avgtime = avgtime / howmanytimesavg; //get avg time
-		fprintf(outfile,"\nAverage Time Elaspsed: %f Seconds", avgtime);
+		fprintf(outfile,"\nAverage Time Elaspsed: %f Seconds\n", avgtime);
 		fclose(outfile); //CLOSE file ONLY proc 0 can.
 	}
 	MPI_Barrier(MPI_COMM_WORLD); //wait to all proccesses to catch up before finalize
